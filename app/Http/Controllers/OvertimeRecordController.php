@@ -12,24 +12,21 @@ class OvertimeRecordController extends Controller
     {
         $query = $employee->overtimeRecords();
 
-        if ($request->has('search')) {
+        // Filter by date if search is provided
+        if ($request->has('search') && $request->search) {
             $query->whereDate('date', $request->search);
         }
 
         // Filter by approval status if requested
-        if ($request->has('status')) {
+        if ($request->has('status') && $request->status) {
             switch($request->status) {
                 case 'approved':
-                    $query->whereNotNull('purpose_deliverables')
-                          ->where('purpose_deliverables', '!=', '')
-                          ->whereNotNull('actual_accomplishment')
+                    $query->whereNotNull('actual_accomplishment')
                           ->where('actual_accomplishment', '!=', '');
                     break;
                 case 'pending':
                     $query->where(function($q) {
-                        $q->whereNull('purpose_deliverables')
-                          ->orWhere('purpose_deliverables', '=', '')
-                          ->orWhereNull('actual_accomplishment')
+                        $q->whereNull('actual_accomplishment')
                           ->orWhere('actual_accomplishment', '=', '');
                     });
                     break;
@@ -38,22 +35,19 @@ class OvertimeRecordController extends Controller
 
         $records = $query->orderBy('date', 'desc')->paginate(15);
         
-        // Calculate totals
+        // Calculate totals for approved overtime
         $approvedTotal = $employee->overtimeRecords()
-            ->whereNotNull('purpose_deliverables')
-            ->where('purpose_deliverables', '!=', '')
             ->whereNotNull('actual_accomplishment')
             ->where('actual_accomplishment', '!=', '')
-            ->sum('overtime_hours');
+            ->sum('overtime_hours') ?? 0;
             
+        // Calculate totals for pending overtime
         $pendingTotal = $employee->overtimeRecords()
             ->where(function($query) {
-                $query->whereNull('purpose_deliverables')
-                      ->orWhere('purpose_deliverables', '=', '')
-                      ->orWhereNull('actual_accomplishment')
+                $query->whereNull('actual_accomplishment')
                       ->orWhere('actual_accomplishment', '=', '');
             })
-            ->sum('overtime_hours');
+            ->sum('overtime_hours') ?? 0;
         
         return view('overtime.index', compact('employee', 'records', 'approvedTotal', 'pendingTotal'));
     }
@@ -72,15 +66,15 @@ class OvertimeRecordController extends Controller
             'break_hours' => 'nullable|numeric|min:0',
             'total_hours_rendered' => 'nullable|numeric|min:0',
             'overtime_hours' => 'nullable|numeric|min:0',
-            'remarks' => 'nullable|string',
+            'remarks' => 'nullable|string|max:1000',
             'purpose_deliverables' => 'nullable|string',
             'actual_accomplishment' => 'nullable|string',
         ]);
 
-        // Convert empty strings and zeros to null for auto-calculation
-        $validated['break_hours'] = $this->nullIfEmpty($validated['break_hours'] ?? null);
-        $validated['total_hours_rendered'] = $this->nullIfEmpty($validated['total_hours_rendered'] ?? null);
-        $validated['overtime_hours'] = $this->nullIfEmpty($validated['overtime_hours'] ?? null);
+        // Convert empty strings to null for auto-calculation
+        $validated['break_hours'] = $this->convertToNull($validated['break_hours'] ?? null);
+        $validated['total_hours_rendered'] = $this->convertToNull($validated['total_hours_rendered'] ?? null);
+        $validated['overtime_hours'] = $this->convertToNull($validated['overtime_hours'] ?? null);
 
         $employee->overtimeRecords()->create($validated);
 
@@ -90,11 +84,21 @@ class OvertimeRecordController extends Controller
 
     public function edit(Employee $employee, OvertimeRecord $overtimeRecord)
     {
+        // Ensure the overtime record belongs to this employee
+        if ($overtimeRecord->employee_id !== $employee->id) {
+            abort(403, 'Unauthorized action.');
+        }
+
         return view('overtime.edit', compact('employee', 'overtimeRecord'));
     }
 
     public function update(Request $request, Employee $employee, OvertimeRecord $overtimeRecord)
     {
+        // Ensure the overtime record belongs to this employee
+        if ($overtimeRecord->employee_id !== $employee->id) {
+            abort(403, 'Unauthorized action.');
+        }
+
         $validated = $request->validate([
             'date' => 'nullable|date',
             'time_in' => 'nullable|string',
@@ -102,15 +106,15 @@ class OvertimeRecordController extends Controller
             'break_hours' => 'nullable|numeric|min:0',
             'total_hours_rendered' => 'nullable|numeric|min:0',
             'overtime_hours' => 'nullable|numeric|min:0',
-            'remarks' => 'nullable|string',
+            'remarks' => 'nullable|string|max:1000',
             'purpose_deliverables' => 'nullable|string',
             'actual_accomplishment' => 'nullable|string',
         ]);
 
-        // Convert empty strings and zeros to null for auto-calculation
-        $validated['break_hours'] = $this->nullIfEmpty($validated['break_hours'] ?? null);
-        $validated['total_hours_rendered'] = $this->nullIfEmpty($validated['total_hours_rendered'] ?? null);
-        $validated['overtime_hours'] = $this->nullIfEmpty($validated['overtime_hours'] ?? null);
+        // Convert empty strings to null for auto-calculation
+        $validated['break_hours'] = $this->convertToNull($validated['break_hours'] ?? null);
+        $validated['total_hours_rendered'] = $this->convertToNull($validated['total_hours_rendered'] ?? null);
+        $validated['overtime_hours'] = $this->convertToNull($validated['overtime_hours'] ?? null);
 
         $overtimeRecord->update($validated);
 
@@ -120,46 +124,33 @@ class OvertimeRecordController extends Controller
 
     public function destroy(Employee $employee, OvertimeRecord $overtimeRecord)
     {
+        // Ensure the overtime record belongs to this employee
+        if ($overtimeRecord->employee_id !== $employee->id) {
+            abort(403, 'Unauthorized action.');
+        }
+
         $overtimeRecord->delete();
 
         return redirect()->route('overtime.index', $employee)
             ->with('success', 'Overtime record deleted successfully.');
     }
 
-    public function importForm(Employee $employee)
-    {
-        return view('overtime.import', compact('employee'));
-    }
-
-    public function import(Request $request, Employee $employee)
-    {
-        $request->validate([
-            'file' => 'required|mimes:xlsx,xls,csv|max:2048',
-        ]);
-
-        try {
-            \Maatwebsite\Excel\Facades\Excel::import(
-                new \App\Imports\OvertimeRecordsImport($employee), 
-                $request->file('file')
-            );
-
-            return redirect()->route('overtime.index', $employee)
-                ->with('success', 'Overtime records imported successfully.');
-        } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Import failed: ' . $e->getMessage());
-        }
-    }
-
     /**
-     * Helper method to convert empty strings, zeros, and null to null
+     * Helper method to convert empty strings and zeros to null
+     * This allows the model's boot methods to auto-calculate values
      */
-    private function nullIfEmpty($value)
+    private function convertToNull($value)
     {
-        // Check for null, empty string, string '0', or numeric 0
-        if ($value === null || $value === '' || $value === '0' || $value === 0 || $value === 0.0) {
+        // Return null if empty string, null, or "0" string
+        if ($value === null || $value === '' || $value === '0') {
             return null;
         }
+        
+        // Return null if numeric zero
+        if (is_numeric($value) && (float)$value == 0) {
+            return null;
+        }
+        
         return $value;
     }
 }

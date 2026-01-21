@@ -4,6 +4,7 @@
 
 @section('content')
 <div class="px-4 sm:px-6 lg:px-8">
+    {{-- Header Section --}}
     <div class="sm:flex sm:items-center">
         <div class="sm:flex-auto">
             <h1 class="text-3xl font-semibold text-gray-900">Overtime Records</h1>
@@ -24,21 +25,16 @@
                class="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50">
                 Back to Employees
             </a>
-            @if(config('excel.imports.enabled', true))
-            <a href="{{ route('overtime.import.form', $employee) }}" 
-               class="inline-flex items-center justify-center rounded-md border border-indigo-600 bg-white px-4 py-2 text-sm font-medium text-indigo-600 shadow-sm hover:bg-indigo-50">
-                Import Excel
-            </a>
-            @endif
-            <a href="{{ route('overtime.create', $employee) }}" 
+            <a href="{{ url('employees/' . $employee->id . '/overtime/create') }}" 
                class="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
                 Add Overtime
             </a>
         </div>
     </div>
 
+    {{-- Search/Filter Section --}}
     <div class="mt-6 flex gap-2">
-        <form method="GET" action="{{ route('overtime.index', $employee) }}" class="flex gap-2 flex-1">
+        <form method="GET" action="{{ url('employees/' . $employee->id . '/overtime') }}" class="flex gap-2 flex-1">
             <input type="date" 
                    name="search" 
                    value="{{ request('search') }}"
@@ -49,7 +45,7 @@
                 Search
             </button>
             @if(request('search') || request('status'))
-                <a href="{{ route('overtime.index', $employee) }}" 
+                <a href="{{ url('employees/' . $employee->id . '/overtime') }}" 
                    class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Clear
                 </a>
@@ -57,6 +53,7 @@
         </form>
     </div>
 
+    {{-- Table Section --}}
     <div class="mt-8 flex flex-col">
         <div class="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
             <div class="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
@@ -123,9 +120,9 @@
                                         {{ $record->remarks ?? '-' }}
                                     </td>
                                     <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                                        <a href="{{ route('overtime.edit', [$employee, $record]) }}" 
+                                        <a href="{{ url('employees/' . $employee->id . '/overtime/' . $record->id . '/edit') }}" 
                                            class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
-                                        <form action="{{ route('overtime.destroy', [$employee, $record]) }}" method="POST" class="inline">
+                                        <form action="{{ url('employees/' . $employee->id . '/overtime/' . $record->id) }}" method="POST" class="inline">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" 
@@ -150,6 +147,7 @@
         </div>
     </div>
 
+    {{-- Pagination --}}
     <div class="mt-4">
         {{ $records->appends(request()->query())->links() }}
     </div>
