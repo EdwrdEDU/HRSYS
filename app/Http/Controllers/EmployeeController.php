@@ -31,6 +31,25 @@ class EmployeeController extends Controller
 
         $employees = $query->orderBy('last_name')->orderBy('first_name')->paginate(15);
         
+        // Calculate available overtime for each employee
+        foreach ($employees as $employee) {
+            // Get total approved overtime
+            $approvedTotal = $employee->overtimeRecords()
+                ->whereNotNull('actual_accomplishment')
+                ->where('actual_accomplishment', '!=', '')
+                ->sum('overtime_hours') ?? 0;
+            
+            // Get total subtracted
+            $totalSubtracted = \App\Models\OvertimeSubtraction::whereHas('overtimeRecord', function($query) use ($employee) {
+                $query->where('employee_id', $employee->id);
+            })->sum('hours_subtracted') ?? 0;
+            
+            // Calculate available hours
+            $employee->available_overtime = $approvedTotal - $totalSubtracted;
+            $employee->total_approved = $approvedTotal;
+            $employee->total_subtracted = $totalSubtracted;
+        }
+        
         // Get all unique departments for filter dropdown
         $departments = Employee::select('department')
             ->distinct()

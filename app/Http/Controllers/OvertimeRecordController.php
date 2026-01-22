@@ -35,11 +35,19 @@ class OvertimeRecordController extends Controller
 
         $records = $query->orderBy('date', 'desc')->paginate(15);
         
-        // Calculate totals for approved overtime
-        $approvedTotal = $employee->overtimeRecords()
+        // Calculate total approved overtime
+        $approvedTotalRaw = $employee->overtimeRecords()
             ->whereNotNull('actual_accomplishment')
             ->where('actual_accomplishment', '!=', '')
             ->sum('overtime_hours') ?? 0;
+        
+        // Calculate total subtracted
+        $totalSubtracted = \App\Models\OvertimeSubtraction::whereHas('overtimeRecord', function($query) use ($employee) {
+            $query->where('employee_id', $employee->id);
+        })->sum('hours_subtracted') ?? 0;
+        
+        // Available approved hours = approved - subtracted
+        $approvedTotal = $approvedTotalRaw - $totalSubtracted;
             
         // Calculate totals for pending overtime
         $pendingTotal = $employee->overtimeRecords()
@@ -49,7 +57,7 @@ class OvertimeRecordController extends Controller
             })
             ->sum('overtime_hours') ?? 0;
         
-        return view('overtime.index', compact('employee', 'records', 'approvedTotal', 'pendingTotal'));
+        return view('overtime.index', compact('employee', 'records', 'approvedTotal', 'pendingTotal', 'totalSubtracted', 'approvedTotalRaw'));
     }
 
     public function create(Employee $employee)
@@ -133,6 +141,95 @@ class OvertimeRecordController extends Controller
 
         return redirect()->route('overtime.index', $employee)
             ->with('success', 'Overtime record deleted successfully.');
+    }
+
+    /**
+     * Show form to subtract hours from total approved overtime
+     */
+    public function subtractForm(Employee $employee)
+    {
+        // Calculate total approved overtime
+        $totalApprovedHours = $employee->overtimeRecords()
+            ->whereNotNull('actual_accomplishment')
+            ->where('actual_accomplishment', '!=', '')
+            ->sum('overtime_hours') ?? 0;
+
+        // Get total already subtracted
+        $totalSubtracted = \App\Models\OvertimeSubtraction::whereHas('overtimeRecord', function($query) use ($employee) {
+            $query->where('employee_id', $employee->id);
+        })->sum('hours_subtracted') ?? 0;
+
+        $availableHours = $totalApprovedHours - $totalSubtracted;
+
+        return view('overtime.subtract', compact('employee', 'totalApprovedHours', 'totalSubtracted', 'availableHours'));
+    }
+
+    /**
+     * Subtract hours from total approved overtime
+     */
+    public function subtract(Request $request, Employee $employee)
+    {
+        // Calculate available hours
+        $totalApprovedHours = $employee->overtimeRecords()
+            ->whereNotNull('actual_accomplishment')
+            ->where('actual_accomplishment', '!=', '')
+            ->sum('overtime_hours') ?? 0;
+
+        $totalSubtracted = \App\Models\OvertimeSubtraction::whereHas('overtimeRecord', function($query) use ($employee) {
+            $query->where('employee_id', $employee->id);
+        })->sum('hours_subtracted') ?? 0;
+
+        $availableHours = $totalApprovedHours - $totalSubtracted;
+
+        $validated = $request->validate([
+            'hours_to_subtract' => 'required|numeric|min:0.01|max:' . $availableHours,
+            'subtraction_reason' => 'required|string|max:500',
+            'subtraction_date' => 'required|date|before_or_equal:today',
+        ]);
+
+        // Create a general subtraction record (not tied to specific overtime record)
+        // We'll attach it to the employee's first approved overtime record as a placeholder
+        $firstApprovedRecord = $employee->overtimeRecords()
+            ->whereNotNull('actual_accomplishment')
+            ->where('actual_accomplishment', '!=', '')
+            ->orderBy('date')
+            ->first();
+
+        if (!$firstApprovedRecord) {
+            return redirect()->route('overtime.index', $employee)
+                ->with('error', 'No approved overtime records found.');
+        }
+
+        $firstApprovedRecord->subtractions()->create([
+            'hours_subtracted' => $validated['hours_to_subtract'],
+            'reason' => $validated['subtraction_reason'],
+            'subtraction_date' => $validated['subtraction_date'],
+            'subtracted_by' => auth()->id(),
+        ]);
+
+        $newAvailableHours = $availableHours - $validated['hours_to_subtract'];
+
+        return redirect()->route('overtime.index', $employee)
+            ->with('success', "Successfully subtracted {$validated['hours_to_subtract']} hours from total approved overtime. Available hours: {$newAvailableHours} hrs.");
+    }
+
+    /**
+     * Delete a subtraction record (undo subtraction)
+     */
+    public function deleteSubtraction(Employee $employee, $subtractionId)
+    {
+        $subtraction = \App\Models\OvertimeSubtraction::findOrFail($subtractionId);
+
+        // Verify this subtraction belongs to the employee's overtime records
+        if ($subtraction->overtimeRecord->employee_id !== $employee->id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $hours = $subtraction->hours_subtracted;
+        $subtraction->delete();
+
+        return redirect()->route('overtime.index', $employee)
+            ->with('success', "Subtraction of {$hours} hours has been removed. These hours are now available again.");
     }
 
     /**

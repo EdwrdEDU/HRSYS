@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Carbon\Carbon;
 
 class OvertimeRecord extends Model
@@ -34,6 +35,14 @@ class OvertimeRecord extends Model
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    /**
+     * Get all subtractions for this overtime record
+     */
+    public function subtractions(): HasMany
+    {
+        return $this->hasMany(OvertimeSubtraction::class);
     }
 
     /**

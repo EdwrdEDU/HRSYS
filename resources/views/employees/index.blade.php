@@ -63,7 +63,7 @@
                             <tr>
                                 <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Name</th>
                                 <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Department</th>
-                                <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Total OT Hours</th>
+                                <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Available OT</th>
                                 <th class="relative py-3.5 pl-3 pr-4 sm:pr-6">
                                     <span class="sr-only">Actions</span>
                                 </th>
@@ -77,9 +77,11 @@
                                     </td>
                                     <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                         {{ $employee->department }}
-                                    </td>
-                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                        {{ $employee->overtimeRecords()->sum('overtime_hours') ?? 0 }} hrs
+                                    </td>            
+                                    <td class="whitespace-nowrap px-3 py-4 text-sm">
+                                        <span class="font-semibold {{ $employee->available_overtime > 0 ? 'text-green-600' : 'text-gray-400' }}">
+                                            {{ number_format($employee->available_overtime ?? 0, 2) }} hrs
+                                        </span>
                                     </td>
                                     <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 space-x-2">
                                         <a href="{{ route('overtime.index', $employee) }}" 
@@ -105,7 +107,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="px-3 py-8 text-sm text-gray-500 text-center">
+                                    <td colspan="6" class="px-3 py-8 text-sm text-gray-500 text-center">
                                         No employees found.
                                     </td>
                                 </tr>

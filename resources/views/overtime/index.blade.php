@@ -13,10 +13,15 @@
             </p>
             <div class="mt-2 flex gap-4">
                 <span class="text-sm text-green-600 font-semibold">
-                    Approved: {{ $approvedTotal }} {{ $approvedTotal == 1 ? 'hr' : 'hrs' }}
+                    Approved: {{ number_format($approvedTotal, 2) }} {{ abs($approvedTotal) == 1 ? 'hr' : 'hrs' }}
                 </span>
+                @if(isset($totalSubtracted) && $totalSubtracted > 0)
+                    <span class="text-sm text-red-600 font-semibold">
+                        Subtracted: {{ number_format($totalSubtracted, 2) }} hrs
+                    </span>
+                @endif
                 <span class="text-sm text-yellow-600 font-semibold">
-                    Pending: {{ $pendingTotal }} {{ $pendingTotal == 1 ? 'hr' : 'hrs' }}
+                    Pending: {{ number_format($pendingTotal, 2) }} {{ $pendingTotal == 1 ? 'hr' : 'hrs' }}
                 </span>
             </div>
         </div>
@@ -25,6 +30,12 @@
                class="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50">
                 Back to Employees
             </a>
+            @if($approvedTotal > 0)
+                <a href="{{ route('overtime.subtract.form', $employee) }}" 
+                   class="inline-flex items-center justify-center rounded-md border border-orange-600 bg-white px-4 py-2 text-sm font-medium text-orange-600 shadow-sm hover:bg-orange-50">
+                    Subtract Hours
+                </a>
+            @endif
             <a href="{{ url('employees/' . $employee->id . '/overtime/create') }}" 
                class="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
                 Add Overtime
@@ -151,5 +162,52 @@
     <div class="mt-4">
         {{ $records->appends(request()->query())->links() }}
     </div>
+
+    {{-- Subtraction History Section --}}
+    @php
+        $allSubtractions = \App\Models\OvertimeSubtraction::whereHas('overtimeRecord', function($query) use ($employee) {
+            $query->where('employee_id', $employee->id);
+        })->orderBy('subtraction_date', 'desc')->get();
+    @endphp
+
+    @if($allSubtractions->count() > 0)
+        <div class="mt-8 bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Subtraction History</h3>
+            <div class="space-y-3">
+                @foreach($allSubtractions as $sub)
+                    <div class="bg-white p-4 rounded-md shadow-sm border border-gray-200">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold text-gray-900">
+                                    {{ $sub->subtraction_date->format('F d, Y') }}
+                                </p>
+                                <p class="text-sm text-gray-600 mt-1">{{ $sub->reason }}</p>
+                                @if($sub->subtractedBy)
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        Recorded by {{ $sub->subtractedBy->name }} on {{ $sub->created_at->format('M d, Y') }}
+                                    </p>
+                                @endif
+                            </div>
+                            <div class="text-right flex items-center gap-4">
+                                <span class="text-lg font-bold text-red-600">-{{ $sub->hours_subtracted }} hrs</span>
+                                <form action="{{ route('overtime.subtraction.delete', [$employee, $sub->id]) }}" method="POST" class="inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" 
+                                            onclick="return confirm('Are you sure you want to undo this subtraction? The {{ $sub->hours_subtracted }} hours will be added back to available overtime.')" 
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded-md shadow-sm transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                                        </svg>
+                                        Undo
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
 </div>
 @endsection
