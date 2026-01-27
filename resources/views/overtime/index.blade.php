@@ -15,11 +15,6 @@
                 <span class="text-sm text-green-600 font-semibold">
                     Approved: {{ number_format($approvedTotal, 2) }} {{ abs($approvedTotal) == 1 ? 'hr' : 'hrs' }}
                 </span>
-                @if(isset($totalSubtracted) && $totalSubtracted > 0)
-                    <span class="text-sm text-red-600 font-semibold">
-                        Subtracted: {{ number_format($totalSubtracted, 2) }} hrs
-                    </span>
-                @endif
                 <span class="text-sm text-yellow-600 font-semibold">
                     Pending: {{ number_format($pendingTotal, 2) }} {{ $pendingTotal == 1 ? 'hr' : 'hrs' }}
                 </span>
@@ -30,12 +25,6 @@
                class="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50">
                 Back to Employees
             </a>
-            @if($approvedTotal > 0)
-                <a href="{{ route('overtime.subtract.form', $employee) }}" 
-                   class="inline-flex items-center justify-center rounded-md border border-orange-600 bg-white px-4 py-2 text-sm font-medium text-orange-600 shadow-sm hover:bg-orange-50">
-                    Subtract Hours
-                </a>
-            @endif
             <a href="{{ url('employees/' . $employee->id . '/overtime/create') }}" 
                class="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
                 Add Overtime
@@ -117,10 +106,6 @@
                                             <span class="inline-flex rounded-full px-2 text-xs font-semibold leading-5 bg-green-100 text-green-800">
                                                 ✓ Approved
                                             </span>
-                                        @elseif(str_contains($record->approval_status, 'Form A Only'))
-                                            <span class="inline-flex rounded-full px-2 text-xs font-semibold leading-5 bg-yellow-100 text-yellow-800">
-                                                Pending (Form A Only)
-                                            </span>
                                         @else
                                             <span class="inline-flex rounded-full px-2 text-xs font-semibold leading-5 bg-yellow-100 text-yellow-800">
                                                 Pending
@@ -172,7 +157,7 @@
 
     @if($allSubtractions->count() > 0)
         <div class="mt-8 bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Subtraction History</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Claim History</h3>
             <div class="space-y-3">
                 @foreach($allSubtractions as $sub)
                     <div class="bg-white p-4 rounded-md shadow-sm border border-gray-200">
