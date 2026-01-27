@@ -51,7 +51,7 @@
                         {{-- Department --}}
                         <div>
                             <label for="department" class="block text-sm font-medium text-gray-700">
-                                Department <span class="text-red-500">*</span>
+                                Section <span class="text-red-500">*</span>
                             </label>
                             <input type="text" 
                                    name="department" 
