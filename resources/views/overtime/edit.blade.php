@@ -3,119 +3,232 @@
 @section('title', 'Edit Overtime Record')
 
 @section('content')
-<div class="px-4 sm:px-6 lg:px-8">
-    <div class="md:grid md:grid-cols-3 md:gap-6">
-        <div class="md:col-span-1">
-            <h3 class="text-lg font-medium leading-6 text-gray-900">Edit Overtime Record</h3>
-            <p class="mt-1 text-sm text-gray-600">
-                Update overtime record for <strong>{{ $employee->full_name }}</strong>
-            </p>
-            <div class="mt-4 p-4 rounded-md {{ $overtimeRecord->isApproved() ? 'bg-green-50' : 'bg-yellow-50' }}">
-                <p class="text-xs font-semibold {{ $overtimeRecord->isApproved() ? 'text-green-800' : 'text-yellow-800' }}">
-                    Status: {{ $overtimeRecord->approval_status }}
-                </p>
-            </div>
-            <div class="mt-4 p-4 bg-blue-50 rounded-md">
-                <p class="text-xs text-blue-800">
-                    <strong>Auto-calculation:</strong> Enter Time IN, Time OUT, and Break hours.
-                    <br>• <strong>Total Hours Rendered:</strong> Calculated from times (minimum 8 hours if blank)
-                    <br>• <strong>OT:</strong> Hours beyond 8 (e.g., if Total = 10, then OT = 2)
-                </p>
-            </div>
-            <div class="mt-4 p-4 bg-blue-50 rounded-md">
-                <p class="text-xs text-blue-800">
-                    <strong>Auto-calculation:</strong> To recalculate, clear Total Hours and OT fields (or set to 0).
-                </p>
-            </div>
-        </div>
-        <div class="mt-5 md:mt-0 md:col-span-2">
-            <form action="{{ route('overtime.update', [$employee, $overtimeRecord]) }}" method="POST">
-                @csrf
-                @method('PUT')
-                <div class="shadow sm:rounded-md sm:overflow-hidden">
-                    <div class="px-4 py-5 bg-white space-y-6 sm:p-6">
-                        <div class="grid grid-cols-6 gap-6">
-                            <div class="col-span-6">
-                                <label class="block text-sm font-medium text-gray-700">Date</label>
-                                <input type="date" name="date" value="{{ old('date', $overtimeRecord->date ? $overtimeRecord->date->format('Y-m-d') : '') }}"
-                                       class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                            </div>
+<div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div class="px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {{-- Sidebar --}}
+            <div class="lg:col-span-1">
+                <a href="{{ route('overtime.index', $employee) }}" class="inline-flex items-center text-indigo-600 hover:text-indigo-700 font-medium mb-6 transition-colors">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                    Back
+                </a>
 
-                            <div class="col-span-6 sm:col-span-3">
-                                <label class="block text-sm font-medium text-gray-700">Time IN</label>
-                                <input type="text" name="time_in" value="{{ old('time_in', $overtimeRecord->time_in) }}"
-                                       placeholder="7:38 AM or 07:38"
-                                       class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                                <p class="mt-1 text-xs text-gray-500">Examples: 7:38 AM, 07:38, 7:38 am</p>
-                            </div>
+                <div class="backdrop-blur-sm bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-6 text-white sticky top-8 shadow-lg">
+                    <div class="flex items-center mb-4">
+                        <div class="p-3 bg-white/20 rounded-xl">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold ml-3">Edit Record</h3>
+                    </div>
+                    <p class="text-sm text-white/90">Updating record for:</p>
+                    <p class="text-xl font-bold mt-2">{{ $employee->full_name }}</p>
+                    <p class="text-sm text-white/80">{{ $employee->section }}</p>
 
-                            <div class="col-span-6 sm:col-span-3">
-                                <label class="block text-sm font-medium text-gray-700">Time OUT</label>
-                                <input type="text" name="time_out" value="{{ old('time_out', $overtimeRecord->time_out) }}"
-                                       placeholder="6:38 PM or 18:38"
-                                       class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                                <p class="mt-1 text-xs text-gray-500">Examples: 6:38 PM, 18:38, 6:38 pm</p>
-                            </div>
+                    <div class="border-t border-white/20 mt-6 pt-6">
+                        <div class="inline-flex items-center px-3 py-2 rounded-lg {{ $overtimeRecord->isApproved() ? 'bg-green-500/30' : 'bg-amber-500/30' }} text-sm font-semibold">
+                            @if($overtimeRecord->isApproved())
+                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                Approved
+                            @else
+                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                                {{ $overtimeRecord->approval_status }}
+                            @endif
+                        </div>
 
-                            <div class="col-span-6 sm:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700">Break (hours)</label>
-                                <input type="number" name="break_hours" value="{{ old('break_hours', $overtimeRecord->break_hours) }}" step="0.5" min="0"
-                                       placeholder="e.g., 1"
-                                       class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                            </div>
-
-                            <div class="col-span-6 sm:col-span-3">
-                                <label class="block text-sm font-medium text-gray-700">Total Hours Rendered</label>
-                                <input type="number" name="total_hours_rendered" value="{{ old('total_hours_rendered', $overtimeRecord->total_hours_rendered) }}" step="0.01" min="0"
-                                       placeholder="Set to 0 to recalculate"
-                                       class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                                <p class="mt-1 text-xs text-gray-500">Set to 0 to auto-recalculate</p>
-                            </div>
-
-                            <div class="col-span-6 sm:col-span-3">
-                                <label class="block text-sm font-medium text-gray-700">Overtime Hours</label>
-                                <input type="number" name="overtime_hours" value="{{ old('overtime_hours', $overtimeRecord->overtime_hours) }}" step="0.01" min="0"
-                                    placeholder="Set to 0 to recalculate"
-                                    class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                                <p class="mt-1 text-xs text-gray-500">Set to 0 to auto-recalculate</p>
-                            </div>
-
-                            <div class="col-span-6">
-                                <label class="block text-sm font-medium text-gray-700">Remarks</label>
-                                <textarea name="remarks" rows="2"
-                                          class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">{{ old('remarks', $overtimeRecord->remarks) }}</textarea>
-                            </div>
-
-                            <div class="col-span-6 border-t pt-4">
-                                <h4 class="text-md font-medium text-gray-900 mb-4">Approval Forms</h4>
-                                <p class="text-xs text-gray-600 mb-4">Both forms must be filled for overtime to be counted as approved.</p>
-                            </div>
-
-                            <div class="col-span-6">
-                                <label class="block text-sm font-medium text-gray-700">Purpose/Deliverables (Form A)</label>
-                                <textarea name="purpose_deliverables" rows="3"
-                                          class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">{{ old('purpose_deliverables', $overtimeRecord->purpose_deliverables) }}</textarea>
-                            </div>
-
-                            <div class="col-span-6">
-                                <label class="block text-sm font-medium text-gray-700">Actual Accomplishment (Form B)</label>
-                                <textarea name="actual_accomplishment" rows="3"
-                                          class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">{{ old('actual_accomplishment', $overtimeRecord->actual_accomplishment) }}</textarea>
-                            </div>
+                        <div class="mt-6 pt-6 border-t border-white/20">
+                            <h4 class="font-semibold mb-3 text-xs uppercase">Auto-Calculation Guide</h4>
+                            <ul class="text-xs space-y-2 text-white/90">
+                                <li class="flex items-start">
+                                    <span class="mr-2">✓</span>
+                                    <span>Update Time IN, Time OUT, and Break</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="mr-2">✓</span>
+                                    <span>Set totals to 0 to recalculate</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="mr-2">✓</span>
+                                    <span>Both forms must be complete</span>
+                                </li>
+                            </ul>
                         </div>
                     </div>
-                    <div class="px-4 py-3 bg-gray-50 text-right sm:px-6 space-x-2">
-                        <a href="{{ route('overtime.index', $employee) }}" 
-                           class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                            Cancel
-                        </a>
-                        <button type="submit" 
-                                class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                            Update
-                        </button>
-                    </div>
                 </div>
-            </form>
+            </div>
+
+            {{-- Form --}}
+            <div class="lg:col-span-3">
+                <div class="backdrop-blur-sm bg-white/40 border border-white/60 rounded-2xl p-8 shadow-sm">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-2">Edit Overtime Record</h2>
+                    <p class="text-gray-600 mb-8">Update the details and approval forms</p>
+
+                    <form action="{{ route('overtime.update', [$employee, $overtimeRecord]) }}" method="POST">
+                        @csrf
+                        @method('PUT')
+                        <div class="space-y-8">
+                            {{-- Date Field --}}
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 mb-2">
+                                    <div class="flex items-center">
+                                        <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h18M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                        </svg>
+                                        Date
+                                    </div>
+                                </label>
+                                <input type="date" name="date" value="{{ old('date', $overtimeRecord->date ? $overtimeRecord->date->format('Y-m-d') : '') }}"
+                                       class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all @error('date') border-red-500 @enderror">
+                                @error('date')<p class="text-red-600 text-sm mt-2">{{ $message }}</p>@enderror
+                            </div>
+
+                            {{-- Time IN and OUT --}}
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-900 mb-2">
+                                        <div class="flex items-center">
+                                            <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                            </svg>
+                                            Time IN
+                                        </div>
+                                    </label>
+                                    <input type="text" name="time_in" value="{{ old('time_in', $overtimeRecord->time_in) }}"
+                                           placeholder="7:38 AM or 07:38"
+                                           class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all @error('time_in') border-red-500 @enderror">
+                                    <p class="text-xs text-gray-500 mt-2">Examples: 7:38 AM, 07:38, 7:38 am</p>
+                                    @error('time_in')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-900 mb-2">
+                                        <div class="flex items-center">
+                                            <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" transform="scaleX(-1) translate(-24 0)"></path>
+                                            </svg>
+                                            Time OUT
+                                        </div>
+                                    </label>
+                                    <input type="text" name="time_out" value="{{ old('time_out', $overtimeRecord->time_out) }}"
+                                           placeholder="6:38 PM or 18:38"
+                                           class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all @error('time_out') border-red-500 @enderror">
+                                    <p class="text-xs text-gray-500 mt-2">Examples: 6:38 PM, 18:38, 6:38 pm</p>
+                                    @error('time_out')<p class="text-red-600 text-sm mt-1">{{ $message }}</p>@enderror
+                                </div>
+                            </div>
+
+                            {{-- Break Hours --}}
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-900 mb-2">
+                                        <div class="flex items-center">
+                                            <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            Break (hours)
+                                        </div>
+                                    </label>
+                                    <input type="text" name="break_hours" value="{{ old('break_hours', $overtimeRecord->formatted_break_hours ?? $overtimeRecord->break_hours) }}"
+                                           placeholder="1:00 or 1.5"
+                                           class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all @error('break_hours') border-red-500 @enderror">
+                                    <p class="text-xs text-gray-500 mt-2">Use 1:00, 1:30, or decimal like 1.5</p>
+                                    @error('break_hours')<p class="text-red-600 text-sm mt-2">{{ $message }}</p>@enderror
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-900 mb-2">
+                                        <div class="flex items-center">
+                                            <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            Rendered Hours
+                                        </div>
+                                    </label>
+                                    <input type="text" name="total_hours_rendered" value="{{ old('total_hours_rendered', $overtimeRecord->formatted_total_hours ?? $overtimeRecord->total_hours_rendered) }}"
+                                       placeholder="8:00 or 8.5"
+                                       class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all">
+                                    <p class="text-xs text-gray-500 mt-2">Set to 0 to auto-recalculate or use 8:00 format</p>
+                                </div>
+                            </div>
+
+                            {{-- OT Hours --}}
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-900 mb-2">
+                                        <div class="flex items-center">
+                                            <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            Overtime Hours
+                                        </div>
+                                    </label>
+                                    <input type="text" name="overtime_hours" value="{{ old('overtime_hours', $overtimeRecord->formatted_overtime_hours ?? $overtimeRecord->overtime_hours) }}"
+                                        placeholder="2:30 or 2.5"
+                                        class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all">
+                                    <p class="text-xs text-gray-500 mt-2">Set to 0 to auto-recalculate or use 2:30 format</p>
+                                </div>
+                            </div>
+
+                            {{-- Remarks --}}
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 mb-2">
+                                    <div class="flex items-center">
+                                        <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
+                                        </svg>
+                                        Remarks
+                                    </div>
+                                </label>
+                                <textarea name="remarks" rows="3"
+                                          class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all @error('remarks') border-red-500 @enderror">{{ old('remarks', $overtimeRecord->remarks) }}</textarea>
+                                @error('remarks')<p class="text-red-600 text-sm mt-2">{{ $message }}</p>@enderror
+                            </div>
+
+                            {{-- Approval Forms Section --}}
+                            <div class="border-t-2 border-gray-200 pt-8">
+                                <h3 class="text-lg font-bold text-gray-900 mb-2 flex items-center">
+                                    <svg class="w-6 h-6 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    Approval Forms
+                                </h3>
+                                <p class="text-sm text-gray-600 mb-6">Both forms must be filled for overtime to be counted as approved.</p>
+
+                                <div class="grid grid-cols-1 gap-6">
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-900 mb-2">Purpose/Deliverables (Form A)</label>
+                                        <textarea name="purpose_deliverables" rows="4"
+                                                  class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all @error('purpose_deliverables') border-red-500 @enderror">{{ old('purpose_deliverables', $overtimeRecord->purpose_deliverables) }}</textarea>
+                                        @error('purpose_deliverables')<p class="text-red-600 text-sm mt-2">{{ $message }}</p>@enderror
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-900 mb-2">Actual Accomplishment (Form B)</label>
+                                        <textarea name="actual_accomplishment" rows="4"
+                                                  class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all @error('actual_accomplishment') border-red-500 @enderror">{{ old('actual_accomplishment', $overtimeRecord->actual_accomplishment) }}</textarea>
+                                        @error('actual_accomplishment')<p class="text-red-600 text-sm mt-2">{{ $message }}</p>@enderror
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Action Buttons --}}
+                            <div class="flex gap-3 pt-6">
+                                <a href="{{ route('overtime.index', $employee) }}" 
+                                   class="flex-1 px-6 py-3 border border-gray-300 bg-white text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-all duration-200 text-center">
+                                    Cancel
+                                </a>
+                                <button type="submit" 
+                                        class="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5">
+                                    Update Record
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 </div>

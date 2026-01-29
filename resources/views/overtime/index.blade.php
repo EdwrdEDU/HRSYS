@@ -3,151 +3,193 @@
 @section('title', 'Overtime Records')
 
 @section('content')
-<div class="px-4 sm:px-6 lg:px-8">
-
-    {{-- Header --}}
-    <div class="sm:flex sm:items-center">
-        <div class="sm:flex-auto">
-            <h1 class="text-3xl font-semibold text-gray-900">Overtime Records</h1>
-            <p class="mt-2 text-sm text-gray-700">
-                Managing overtime for:
-                <strong>{{ $employee->full_name }}</strong> ({{ $employee->section }})
-            </p>
-
-            <div class="mt-2 flex gap-4">
-                <span class="text-sm text-green-600 font-semibold">
-                    Approved: {{ number_format($approvedTotal, 2) }} hrs
-                </span>
-                <span class="text-sm text-yellow-600 font-semibold">
-                    Pending: {{ number_format($pendingTotal, 2) }} hrs
-                </span>
+<div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div class="px-4 sm:px-6 lg:px-8 py-8">
+        {{-- Header with back button --}}
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <a href="{{ route('employees.index') }}" class="inline-flex items-center text-indigo-600 hover:text-indigo-700 font-medium mb-3 transition-colors">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                    Back to Employees
+                </a>
+                <h1 class="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Overtime Records</h1>
+                <p class="mt-2 text-gray-600">Managing overtime for <strong class="text-gray-900">{{ $employee->full_name }}</strong> • {{ $employee->section }}</p>
             </div>
         </div>
 
-        <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none space-x-2">
-            <a href="{{ route('employees.index') }}"
-               class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50">
-                Back to Employees
-            </a>
+        {{-- Stats Cards --}}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div class="backdrop-blur-sm bg-white/40 border border-white/60 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-600 font-medium">Approved Hours</p>
+                        <p class="text-2xl font-bold text-green-600 mt-1">{{ number_format($approvedTotal, 2) }}</p>
+                        <p class="text-xs text-gray-500 mt-0.5">hours approved</p>
+                    </div>
+                    <div class="p-2 bg-green-100 rounded-lg">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
 
+            <div class="backdrop-blur-sm bg-white/40 border border-white/60 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-600 font-medium">Pending Hours</p>
+                        <p class="text-2xl font-bold text-amber-600 mt-1">{{ number_format($pendingTotal, 2) }}</p>
+                        <p class="text-xs text-gray-500 mt-0.5">hours pending approval</p>
+                    </div>
+                    <div class="p-2 bg-amber-100 rounded-lg">
+                        <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Actions and Search --}}
+        <div class="flex flex-col sm:flex-row gap-3 mb-8">
             @if($approvedTotal > 0)
                 <a href="{{ route('overtime.subtract.form', $employee) }}"
-                   class="inline-flex items-center rounded-md border border-orange-600 bg-white px-4 py-2 text-sm font-medium text-orange-600 shadow-sm hover:bg-orange-50">
+                   class="flex items-center justify-center px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                    </svg>
                     Subtract Hours
                 </a>
             @endif
 
             <a href="{{ route('overtime.create', $employee) }}"
-               class="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700">
+               class="flex items-center justify-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
                 Add Overtime
             </a>
+
+            <div class="flex-1 flex gap-2">
+                <form method="GET" action="{{ route('overtime.index', $employee) }}" class="flex-1 flex gap-2">
+                    <input type="date"
+                           name="search"
+                           value="{{ request('search') }}"
+                           class="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all">
+
+                    <button type="submit" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5">
+                        Search
+                    </button>
+
+                    @if(request('search'))
+                        <a href="{{ route('overtime.index', $employee) }}"
+                           class="px-6 py-3 bg-white border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-all duration-200">
+                            Clear
+                        </a>
+                    @endif
+                </form>
+            </div>
         </div>
-    </div>
 
-    {{-- Search --}}
-    <div class="mt-6">
-        <form method="GET" action="{{ route('overtime.index', $employee) }}" class="flex gap-2">
-            <input type="date"
-                   name="search"
-                   value="{{ request('search') }}"
-                   class="flex-1 rounded-md border-gray-300 shadow-sm pl-3 focus:ring-indigo-500 focus:border-indigo-500">
-
-            <button type="submit" class="px-4 py-2 rounded-md bg-indigo-600 text-white text-sm font-medium shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                Search
-            </button>
-
-            @if(request('search'))
-                <a href="{{ route('overtime.index', $employee) }}"
-                   class="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-700 text-sm font-medium shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    Clear
-                </a>
-            @endif
-        </form>
-    </div>
-
-    {{-- OVERTIME TABLE --}}
-    <div class="mt-8">
-        <div class="shadow ring-1 ring-black ring-opacity-5 rounded-lg">
-            {{-- 6 rows visible then scroll --}}
-            <div class="overflow-y-auto" style="max-height: 300px;">
-                <table class="min-w-full divide-y divide-gray-300">
-                    <thead class="sticky top-0 bg-gray-50 z-10">
+        {{-- Overtime Records Table --}}
+        <div class="backdrop-blur-sm bg-white/40 border border-white/60 rounded-2xl shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-white/60">
                         <tr>
-                            <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Date</th>
-                            <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">IN</th>
-                            <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">OUT</th>
-                            <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Break</th>
-                            <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Total Hrs</th>
-                            <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">OT</th>
-                            <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Status</th>
-                            <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Remarks</th>
-                            <th class="sticky top-0 bg-gray-50 py-3.5 pl-3 pr-4 sm:pr-6 text-right text-sm font-semibold text-gray-900">Actions</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Date</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">IN</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">OUT</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Break</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Rendered Hrs</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">OT</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Remarks</th>
+                            <th class="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
 
-                    <tbody class="divide-y divide-gray-200 bg-white">
+                    <tbody class="divide-y divide-white/60">
                         @forelse($records as $record)
-                            <tr class="{{ $record->isApproved() ? 'bg-green-50' : '' }}">
-                                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
-                                    {{ $record->date ? $record->date->format('D, F d, Y') : '-' }}
+                            <tr class="hover:bg-white/30 transition-colors {{ $record->isApproved() ? 'bg-green-50/40' : '' }}">
+                                <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                                    {{ $record->date ? $record->date->format('D, M d') : '-' }}
                                 </td>
-                                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                <td class="px-6 py-4 text-sm text-gray-600">
                                     {{ $record->time_in ? \Carbon\Carbon::parse($record->time_in)->format('h:i A') : '-' }}
                                 </td>
-                                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                <td class="px-6 py-4 text-sm text-gray-600">
                                     {{ $record->time_out ? \Carbon\Carbon::parse($record->time_out)->format('h:i A') : '-' }}
                                 </td>
-                                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                <td class="px-6 py-4 text-sm text-gray-600">
                                     {{ $record->break_hours ?? '-' }}
                                 </td>
-                                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                <td class="px-6 py-4 text-sm font-medium text-gray-900">
                                     @if($record->total_hours_rendered)
                                         {{ $record->total_hours_rendered }} {{ $record->total_hours_rendered == 1 ? 'hr' : 'hrs' }}
                                     @else
                                         -
                                     @endif
                                 </td>
-                                <td class="whitespace-nowrap px-3 py-4 text-sm font-medium text-gray-900">
+                                <td class="px-6 py-4 text-sm font-bold text-indigo-600">
                                     @if($record->overtime_hours)
                                         {{ $record->overtime_hours }} {{ $record->overtime_hours == 1 ? 'hr' : 'hrs' }}
                                     @else
                                         -
                                     @endif
                                 </td>
-                                <td class="whitespace-nowrap px-3 py-4 text-sm">
+                                <td class="px-6 py-4 text-sm">
                                     @if($record->approval_status === 'Approved')
-                                        <span class="inline-flex rounded-full px-2 text-xs font-semibold leading-5 bg-green-100 text-green-800">
-                                            ✓ Approved
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100/80 text-green-700 backdrop-blur-sm">
+                                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></path></svg>
+                                            Approved
                                         </span>
                                     @elseif(str_contains($record->approval_status, 'Form A Only'))
-                                        <span class="inline-flex rounded-full px-2 text-xs font-semibold leading-5 bg-yellow-100 text-yellow-800">
-                                            Pending (Form A Only)
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100/80 text-amber-700 backdrop-blur-sm">
+                                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></path></svg>
+                                            Form A Only
                                         </span>
                                     @else
-                                        <span class="inline-flex rounded-full px-2 text-xs font-semibold leading-5 bg-yellow-100 text-yellow-800">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100/80 text-amber-700 backdrop-blur-sm">
+                                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></path></svg>
                                             Pending
                                         </span>
                                     @endif
                                 </td>
-                                <td class="px-3 py-4 text-sm text-gray-500 max-w-xs truncate">
+                                <td class="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
                                     {{ $record->remarks ?? '-' }}
                                 </td>
-                                <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                                    <a href="{{ route('overtime.edit', [$employee, $record]) }}"
-                                       class="text-indigo-600 hover:text-indigo-900 mr-3">
-                                        Edit
-                                    </a>
-                                    <button type="button"
-                                            onclick="openDeleteOvertimeModal({{ $employee->id }}, {{ $record->id }}, '{{ $record->date ? $record->date->format('M d, Y') : 'N/A' }}')"
-                                            class="text-red-600 hover:text-red-900">
-                                        Delete
-                                    </button>
+                                <td class="px-6 py-4 text-right">
+                                    <div class="flex justify-end gap-2">
+                                        <a href="{{ route('overtime.edit', [$employee, $record]) }}"
+                                           class="inline-flex items-center text-indigo-600 hover:text-indigo-700 font-medium text-sm transition-colors">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                            </svg>
+                                            Edit
+                                        </a>
+                                        <button type="button"
+                                                onclick="openDeleteOvertimeModal({{ $employee->id }}, {{ $record->id }}, '{{ $record->date ? $record->date->format('M d, Y') : 'N/A' }}')"
+                                                class="inline-flex items-center text-red-600 hover:text-red-700 font-medium text-sm transition-colors">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            </svg>
+                                            Delete
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="px-3 py-8 text-center text-sm text-gray-500">
-                                    No overtime records found.
+                                <td colspan="9" class="px-6 py-12 text-center">
+                                    <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    <p class="text-gray-500 font-medium">No overtime records found.</p>
+                                    <p class="text-gray-400 text-sm mt-1">Add your first overtime record to get started.</p>
+                                    <p class="text-gray-400 text-sm mt-1">Add your first overtime record to get started.</p>
                                 </td>
                             </tr>
                         @endforelse
@@ -155,71 +197,71 @@
                 </table>
             </div>
         </div>
-    </div>
 
-    {{-- Pagination --}}
-    <div class="mt-4">
-        {{ $records->appends(request()->query())->links() }}
-    </div>
+        {{-- Pagination --}}
+        <div class="mt-6">
+            {{ $records->appends(request()->query())->links() }}
+        </div>
 
-    @php
-        $allSubtractions = \App\Models\OvertimeSubtraction::whereHas('overtimeRecord', function($query) use ($employee) {
-            $query->where('employee_id', $employee->id );
-        })->orderBy('subtraction_date', 'desc')->get();
-    @endphp
+        @php
+            $allSubtractions = \App\Models\OvertimeSubtraction::whereHas('overtimeRecord', function($query) use ($employee) {
+                $query->where('employee_id', $employee->id );
+            })->orderBy('subtraction_date', 'desc')->get();
+        @endphp
 
-    @if($allSubtractions->count() > 0)
-        <div class="mt-8">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Subtraction History</h3>
-            <div class="shadow ring-1 ring-black ring-opacity-5 rounded-lg">
-                {{-- 3 rows visible then scroll --}}
-                <div class="overflow-y-auto" style="max-height: 160px;">
-                    <table class="min-w-full divide-y divide-gray-300">
-                        <thead class="bg-gray-50 sticky top-0 z-10">
-                            <tr>
-                                <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Date</th>
-                                <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Hours Subtracted</th>
-                                <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Reason</th>
-                                <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Recorded By</th>
-                                <th class="sticky top-0 bg-gray-50 py-3.5 pl-3 pr-4 sm:pr-6 text-right text-sm font-semibold text-gray-900">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 bg-white">
-                            @foreach($allSubtractions as $sub)
+        @if($allSubtractions->count() > 0)
+            <div class="mt-12">
+                <h3 class="text-2xl font-bold text-gray-900 mb-6">Subtraction History</h3>
+                <div class="backdrop-blur-sm bg-white/40 border border-white/60 rounded-2xl shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gradient-to-r from-orange-50 to-red-50 border-b border-white/60">
                                 <tr>
-                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
-                                        {{ $sub->subtraction_date->format('D, F d, Y') }}
-                                    </td>
-                                    <td class="whitespace-nowrap px-3 py-4 text-sm font-medium text-red-600">
-                                        -{{ $sub->hours_subtracted }} hrs
-                                    </td>
-                                    <td class="px-3 py-4 text-sm text-gray-500">
-                                        {{ $sub->reason }}
-                                    </td>
-                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                        @if($sub->subtractedBy)
-                                            {{ $sub->subtractedBy->name }}
-                                        @else
-                                            -
-                                        @endif
-                                    </td>
-                                    <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                                        <button type="button"
-                                                onclick="openUndoModal({{ $employee->id }}, {{ $sub->id }}, '{{ $sub->hours_subtracted }}', '{{ $sub->subtraction_date->format('M d, Y') }}')"
-                                                class="text-red-600 hover:text-red-900">
-                                            Undo
-                                        </button>
-                                    </td>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Date</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Hours Subtracted</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Reason</th>
+                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Recorded By</th>
+                                    <th class="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
                                 </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody class="divide-y divide-white/60">
+                                @foreach($allSubtractions as $sub)
+                                    <tr class="hover:bg-white/30 transition-colors">
+                                        <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                                            {{ $sub->subtraction_date->format('D, M d') }}
+                                        </td>
+                                        <td class="px-6 py-4 text-sm font-bold text-red-600">
+                                            -{{ $sub->hours_subtracted }} hrs
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-gray-600">
+                                            {{ $sub->reason }}
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-gray-600">
+                                            @if($sub->subtractedBy)
+                                                {{ $sub->subtractedBy->name }}
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+                                        <td class="px-6 py-4 text-right">
+                                            <button type="button"
+                                                    onclick="openUndoModal({{ $employee->id }}, {{ $sub->id }}, '{{ $sub->hours_subtracted }}', '{{ $sub->subtraction_date->format('M d, Y') }}')"
+                                                    class="inline-flex items-center text-red-600 hover:text-red-700 font-medium text-sm transition-colors">
+                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+                                                </svg>
+                                                Undo
+                                            </button>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-        </div>
-    @endif
-
-</div>
+        @endif
+    </div>
 
 {{-- Delete Overtime Record Modal --}}
 <div id="deleteOvertimeModal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
