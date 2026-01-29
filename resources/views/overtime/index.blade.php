@@ -11,7 +11,7 @@
             <h1 class="text-3xl font-semibold text-gray-900">Overtime Records</h1>
             <p class="mt-2 text-sm text-gray-700">
                 Managing overtime for:
-                <strong>{{ $employee->full_name }}</strong> ({{ $employee->department }})
+                <strong>{{ $employee->full_name }}</strong> ({{ $employee->section }})
             </p>
 
             <div class="mt-2 flex gap-4">

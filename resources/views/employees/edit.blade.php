@@ -49,18 +49,18 @@
                             @enderror
                         </div>
 
-                        {{-- Department --}}
+                        {{-- Section --}}
                         <div>
-                            <label for="department" class="block text-sm font-medium text-gray-700">
-                                Department <span class="text-red-500">*</span>
+                            <label for="section" class="block text-sm font-medium text-gray-700">
+                                Section <span class="text-red-500">*</span>
                             </label>
                             <input type="text" 
-                                   name="department" 
-                                   id="department" 
-                                   value="{{ old('department', $employee->department) }}"
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('department') border-red-500 @enderror"
+                                   name="section" 
+                                   id="section" 
+                                   value="{{ old('section', $employee->section) }}"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('section') border-red-500 @enderror"
                                    required>
-                            @error('department')
+                            @error('section')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>

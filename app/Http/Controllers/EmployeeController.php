@@ -20,13 +20,13 @@ class EmployeeController extends Controller
             $query->where(function($q) use ($search) {
                 $q->where('first_name', 'like', "%{$search}%")
                   ->orWhere('last_name', 'like', "%{$search}%")
-                  ->orWhere('department', 'like', "%{$search}%");
+                  ->orWhere('section', 'like', "%{$search}%");
             });
         }
 
-        // Filter by department
-        if ($request->has('department') && $request->department) {
-            $query->where('department', $request->department);
+        // Filter by section
+        if ($request->has('section') && $request->section) {
+            $query->where('section', $request->section);
         }
 
         $employees = $query->orderBy('last_name')->orderBy('first_name')->paginate(15);
@@ -50,13 +50,13 @@ class EmployeeController extends Controller
             $employee->total_subtracted = $totalSubtracted;
         }
         
-        // Get all unique departments for filter dropdown
-        $departments = Employee::select('department')
+        // Get all unique sections for filter dropdown
+        $sections = Employee::select('section')
             ->distinct()
-            ->orderBy('department')
-            ->pluck('department');
+            ->orderBy('section')
+            ->pluck('section');
 
-        return view('employees.index', compact('employees', 'departments'));
+        return view('employees.index', compact('employees', 'sections'));
     }
 
     /**
@@ -75,7 +75,7 @@ class EmployeeController extends Controller
         $validated = $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'department' => 'required|string|max:255',
+            'section' => 'required|string|max:255',
         ]);
 
         $employee = Employee::create($validated);
@@ -133,7 +133,7 @@ class EmployeeController extends Controller
         $validated = $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'department' => 'required|string|max:255',
+            'section' => 'required|string|max:255',
         ]);
 
         $employee->update($validated);
