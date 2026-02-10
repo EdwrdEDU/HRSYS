@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Employee;
 use App\Models\OvertimeRecord;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class OvertimeRecordController extends Controller
 {
@@ -71,18 +73,24 @@ class OvertimeRecordController extends Controller
             'date' => 'nullable|date',
             'time_in' => 'nullable|string',
             'time_out' => 'nullable|string',
-            'break_hours' => 'nullable|numeric|min:0',
-            'total_hours_rendered' => 'nullable|numeric|min:0',
-            'overtime_hours' => 'nullable|numeric|min:0',
+            'break_hours' => ['nullable', 'regex:/^(\d+(\.\d+)?|\d{1,3}:\d{2})$/'],
+            'total_hours_rendered' => ['nullable', 'regex:/^(\d+(\.\d+)?|\d{1,3}:\d{2})$/'],
+            'required_hours' => ['nullable', 'regex:/^(\d+(\.\d+)?|\d{1,3}:\d{2})$/'],
+            'overtime_hours' => ['nullable', 'regex:/^(\d+(\.\d+)?|\d{1,3}:\d{2})$/'],
             'remarks' => 'nullable|string|max:1000',
             'purpose_deliverables' => 'nullable|string',
             'actual_accomplishment' => 'nullable|string',
         ]);
 
         // Convert empty strings to null for auto-calculation
-        $validated['break_hours'] = $this->convertToNull($validated['break_hours'] ?? null);
-        $validated['total_hours_rendered'] = $this->convertToNull($validated['total_hours_rendered'] ?? null);
-        $validated['overtime_hours'] = $this->convertToNull($validated['overtime_hours'] ?? null);
+        $validated['break_hours'] = $this->convertToNull($this->normalizeHoursInput($validated['break_hours'] ?? null));
+        $validated['total_hours_rendered'] = $this->convertToNull($this->normalizeHoursInput($validated['total_hours_rendered'] ?? null));
+        $validated['required_hours'] = $this->convertToNull($this->normalizeHoursInput($validated['required_hours'] ?? null));
+        $validated['overtime_hours'] = $this->convertToNull($this->normalizeHoursInput($validated['overtime_hours'] ?? null));
+
+        if ($validated['required_hours'] === null) {
+            $validated['required_hours'] = 8;
+        }
 
         $employee->overtimeRecords()->create($validated);
 
@@ -111,18 +119,24 @@ class OvertimeRecordController extends Controller
             'date' => 'nullable|date',
             'time_in' => 'nullable|string',
             'time_out' => 'nullable|string',
-            'break_hours' => 'nullable|numeric|min:0',
-            'total_hours_rendered' => 'nullable|numeric|min:0',
-            'overtime_hours' => 'nullable|numeric|min:0',
+            'break_hours' => ['nullable', 'regex:/^(\d+(\.\d+)?|\d{1,3}:\d{2})$/'],
+            'total_hours_rendered' => ['nullable', 'regex:/^(\d+(\.\d+)?|\d{1,3}:\d{2})$/'],
+            'required_hours' => ['nullable', 'regex:/^(\d+(\.\d+)?|\d{1,3}:\d{2})$/'],
+            'overtime_hours' => ['nullable', 'regex:/^(\d+(\.\d+)?|\d{1,3}:\d{2})$/'],
             'remarks' => 'nullable|string|max:1000',
             'purpose_deliverables' => 'nullable|string',
             'actual_accomplishment' => 'nullable|string',
         ]);
 
         // Convert empty strings to null for auto-calculation
-        $validated['break_hours'] = $this->convertToNull($validated['break_hours'] ?? null);
-        $validated['total_hours_rendered'] = $this->convertToNull($validated['total_hours_rendered'] ?? null);
-        $validated['overtime_hours'] = $this->convertToNull($validated['overtime_hours'] ?? null);
+        $validated['break_hours'] = $this->convertToNull($this->normalizeHoursInput($validated['break_hours'] ?? null));
+        $validated['total_hours_rendered'] = $this->convertToNull($this->normalizeHoursInput($validated['total_hours_rendered'] ?? null));
+        $validated['required_hours'] = $this->convertToNull($this->normalizeHoursInput($validated['required_hours'] ?? null));
+        $validated['overtime_hours'] = $this->convertToNull($this->normalizeHoursInput($validated['overtime_hours'] ?? null));
+
+        if ($validated['required_hours'] === null) {
+            $validated['required_hours'] = 8;
+        }
 
         $overtimeRecord->update($validated);
 
@@ -141,6 +155,84 @@ class OvertimeRecordController extends Controller
 
         return redirect()->route('overtime.index', $employee)
             ->with('success', 'Overtime record deleted successfully.');
+    }
+
+    public function import(Request $request, Employee $employee)
+    {
+        $validated = $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv|max:2048',
+        ]);
+
+        $file = $validated['file'];
+        $reader = \PHPExcel_IOFactory::createReaderForFile($file->getRealPath());
+        $reader->setReadDataOnly(true);
+        $workbook = $reader->load($file->getRealPath());
+        $sheet = $workbook->getActiveSheet();
+
+        $rows = $sheet->toArray(null, true, true, true);
+        if (count($rows) < 2) {
+            return redirect()->route('overtime.index', $employee)
+                ->with('error', 'The uploaded file has no data rows to import.');
+        }
+
+        $headerRow = array_shift($rows);
+        $columnFieldMap = $this->buildImportColumnMap($headerRow);
+
+        if (empty($columnFieldMap)) {
+            return redirect()->route('overtime.index', $employee)
+                ->with('error', 'No recognizable column headers were found in the file.');
+        }
+
+        $imported = 0;
+        $skipped = 0;
+        $failed = 0;
+
+        foreach ($rows as $row) {
+            $data = $this->buildImportRowData($row, $columnFieldMap);
+
+            if (!$this->rowHasData($data)) {
+                $skipped++;
+                continue;
+            }
+
+            $validator = Validator::make($data, [
+                'date' => 'nullable|date',
+                'time_in' => 'nullable|string',
+                'time_out' => 'nullable|string',
+                'break_hours' => ['nullable', 'regex:/^(\d+(\.\d+)?|\d{1,3}:\d{2})$/'],
+                'total_hours_rendered' => ['nullable', 'regex:/^(\d+(\.\d+)?|\d{1,3}:\d{2})$/'],
+                'required_hours' => ['nullable', 'regex:/^(\d+(\.\d+)?|\d{1,3}:\d{2})$/'],
+                'overtime_hours' => ['nullable', 'regex:/^(\d+(\.\d+)?|\d{1,3}:\d{2})$/'],
+                'remarks' => 'nullable|string|max:1000',
+                'purpose_deliverables' => 'nullable|string',
+                'actual_accomplishment' => 'nullable|string',
+            ]);
+
+            if ($validator->fails()) {
+                $failed++;
+                continue;
+            }
+
+            $data['break_hours'] = $this->convertToNull($this->normalizeHoursInput($data['break_hours'] ?? null));
+            $data['total_hours_rendered'] = $this->convertToNull($this->normalizeHoursInput($data['total_hours_rendered'] ?? null));
+            $data['required_hours'] = $this->convertToNull($this->normalizeHoursInput($data['required_hours'] ?? null));
+            $data['overtime_hours'] = $this->convertToNull($this->normalizeHoursInput($data['overtime_hours'] ?? null));
+
+            if ($data['required_hours'] === null) {
+                $data['required_hours'] = 8;
+            }
+
+            $employee->overtimeRecords()->create($data);
+            $imported++;
+        }
+
+        $message = "Imported {$imported} overtime record(s). Skipped {$skipped} empty row(s).";
+        if ($failed > 0) {
+            $message .= " {$failed} row(s) failed validation.";
+        }
+
+        return redirect()->route('overtime.index', $employee)
+            ->with('success', $message);
     }
 
     /**
@@ -238,16 +330,171 @@ class OvertimeRecordController extends Controller
      */
     private function convertToNull($value)
     {
-        // Return null if empty string, null, or "0" string
-        if ($value === null || $value === '' || $value === '0') {
+        // Return null if empty string or null (leave zeros intact)
+        if ($value === null || $value === '') {
             return null;
         }
-        
-        // Return null if numeric zero
-        if (is_numeric($value) && (float)$value == 0) {
-            return null;
-        }
-        
+
         return $value;
+    }
+
+    /**
+     * Normalize hours input to decimal if in HH:MM format
+     */
+    private function normalizeHoursInput($value)
+    {
+        if ($value === null || $value === '') {
+            return $value;
+        }
+
+        if (is_string($value) && strpos($value, ':') !== false) {
+            $parts = explode(':', $value, 2);
+            $hours = (int) $parts[0];
+            $minutes = isset($parts[1]) ? (int) $parts[1] : 0;
+
+            return round($hours + ($minutes / 60), 2);
+        }
+
+        return $value;
+    }
+
+    private function buildImportColumnMap(array $headerRow): array
+    {
+        $headerMap = [];
+        $aliases = [
+            'DATE' => 'date',
+            'IN' => 'time_in',
+            'TIME_IN' => 'time_in',
+            'OUT' => 'time_out',
+            'TIME_OUT' => 'time_out',
+            'BREAK' => 'break_hours',
+            'BREAK_HOURS' => 'break_hours',
+            'BREAK_MINUTES' => 'break_minutes',
+            'TOTAL_HOURS_RENDERED' => 'total_hours_rendered',
+            'REQUIRED_HOURS' => 'required_hours',
+            'OVERTIME' => 'overtime_hours',
+            'OVERTIME_HOURS' => 'overtime_hours',
+            'REMARKS' => 'remarks',
+            'PURPOSE_DELIVERABLES' => 'purpose_deliverables',
+            'ACTUAL_ACCOMPLISHMENT' => 'actual_accomplishment',
+        ];
+
+        foreach ($headerRow as $column => $header) {
+            $normalized = $this->normalizeHeader($header);
+            if ($normalized && isset($aliases[$normalized])) {
+                $headerMap[$column] = $aliases[$normalized];
+            }
+        }
+
+        return $headerMap;
+    }
+
+    private function buildImportRowData(array $row, array $columnFieldMap): array
+    {
+        $data = [];
+
+        foreach ($columnFieldMap as $column => $field) {
+            $value = $row[$column] ?? null;
+
+            if (is_string($value)) {
+                $value = trim($value);
+            }
+
+            if ($field === 'break_minutes') {
+                if (!array_key_exists('break_hours', $data) && is_numeric($value)) {
+                    $data['break_hours'] = round(((float) $value) / 60, 2);
+                }
+                continue;
+            }
+
+            if ($field === 'date') {
+                $value = $this->parseExcelDateValue($value);
+            }
+
+            if ($field === 'time_in' || $field === 'time_out') {
+                $value = $this->parseExcelTimeValue($value);
+            }
+
+            if ($value === '') {
+                $value = null;
+            }
+
+            $data[$field] = $value;
+        }
+
+        return $data;
+    }
+
+    private function parseExcelDateValue($value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (is_numeric($value)) {
+            try {
+                return \PHPExcel_Shared_Date::ExcelToPHPObject($value)->format('Y-m-d');
+            } catch (\Exception $e) {
+                return null;
+            }
+        }
+
+        try {
+            return Carbon::parse($value)->toDateString();
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    private function parseExcelTimeValue($value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (is_numeric($value)) {
+            try {
+                return \PHPExcel_Shared_Date::ExcelToPHPObject($value)->format('H:i');
+            } catch (\Exception $e) {
+                return null;
+            }
+        }
+
+        try {
+            return Carbon::parse($value)->format('H:i');
+        } catch (\Exception $e) {
+            return is_string($value) ? $value : null;
+        }
+    }
+
+    private function normalizeHeader($header): string
+    {
+        if ($header === null) {
+            return '';
+        }
+
+        $normalized = strtoupper(trim((string) $header));
+        $normalized = preg_replace('/\s+/', '_', $normalized);
+
+        return $normalized;
+    }
+
+    private function rowHasData(array $data): bool
+    {
+        foreach ($data as $value) {
+            if (is_string($value) && trim($value) !== '') {
+                return true;
+            }
+
+            if (is_numeric($value) && (float) $value !== 0.0) {
+                return true;
+            }
+
+            if (is_bool($value)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -105,11 +105,16 @@
                             </td>            
                             <td class="px-6 py-4">
                                 <div class="flex items-center">
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold {{ $employee->available_overtime > 0 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500' }}">
+                                    @php
+                                        $availableHours = $employee->available_overtime ?? 0;
+                                        $hours = floor($availableHours);
+                                        $minutes = str_pad(round(($availableHours - $hours) * 60), 2, '0', STR_PAD_LEFT);
+                                    @endphp
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold {{ $availableHours > 0 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500' }}">
                                         <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
                                         </svg>
-                                        {{ number_format($employee->available_overtime ?? 0, 2) }} hrs
+                                        {{ $hours }}:{{ $minutes }}
                                     </span>
                                 </div>
                             </td>

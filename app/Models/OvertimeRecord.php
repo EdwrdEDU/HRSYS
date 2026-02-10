@@ -19,6 +19,7 @@ class OvertimeRecord extends Model
         'time_out',
         'break_hours',
         'total_hours_rendered',
+        'required_hours',
         'overtime_hours',
         'remarks',
         'purpose_deliverables',
@@ -29,6 +30,7 @@ class OvertimeRecord extends Model
         'date' => 'date',
         'break_hours' => 'decimal:2',
         'total_hours_rendered' => 'decimal:2',
+        'required_hours' => 'decimal:2',
         'overtime_hours' => 'decimal:2',
     ];
 
@@ -66,10 +68,6 @@ class OvertimeRecord extends Model
             return 'Approved';
         }
         
-        if ($hasFormA) {
-            return 'Pending (Form A Only)';
-        }
-        
         return 'Pending';
     }
 
@@ -99,6 +97,11 @@ class OvertimeRecord extends Model
         // Convert HH:MM format to decimal for overtime_hours if needed
         if (!empty($record->overtime_hours) && is_string($record->overtime_hours) && strpos($record->overtime_hours, ':') !== false) {
             $record->overtime_hours = self::convertTimeToDecimal($record->overtime_hours);
+        }
+
+        // Convert HH:MM format to decimal for required_hours if needed
+        if (!empty($record->required_hours) && is_string($record->required_hours) && strpos($record->required_hours, ':') !== false) {
+            $record->required_hours = self::convertTimeToDecimal($record->required_hours);
         }
 
         // Only process if both time_in and time_out are provided
@@ -194,8 +197,8 @@ class OvertimeRecord extends Model
                 || $shouldRecalculate;
             
             if ($shouldRecalculateOT) {
-                $standardHours = 8;
-                $overtimeCalculated = max(0, $renderedHours - $standardHours);
+                $requiredHours = $record->required_hours !== null ? (float) $record->required_hours : 8;
+                $overtimeCalculated = max(0, $renderedHours - $requiredHours);
                 $record->overtime_hours = round($overtimeCalculated, 2);
                 \Log::info('Auto-calculated overtime_hours: ' . $record->overtime_hours);
             } else {
@@ -244,6 +247,11 @@ class OvertimeRecord extends Model
     public function getFormattedOvertimeHoursAttribute()
     {
         return $this->formatDecimalToTime($this->overtime_hours);
+    }
+
+    public function getFormattedRequiredHoursAttribute()
+    {
+        return $this->formatDecimalToTime($this->required_hours);
     }
 
     private function formatDecimalToTime($decimal)

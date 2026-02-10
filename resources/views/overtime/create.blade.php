@@ -3,8 +3,8 @@
 @section('title', 'Add Overtime Record')
 
 @section('content')
-<div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-    <div class="px-4 sm:px-6 lg:px-8 py-8">
+<div class="px-4 sm:px-6 lg:px-8">
+    <div class="max-w-[68rem] mx-auto">
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {{-- Sidebar --}}
             <div class="lg:col-span-1">
@@ -107,7 +107,7 @@
                                 </div>
                             </div>
 
-                            {{-- Break Hours --}}
+                            {{-- Break, Rendered, Required, OT --}}
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label class="block text-sm font-semibold text-gray-900 mb-2">
@@ -118,7 +118,7 @@
                                             Break (hours)
                                         </div>
                                     </label>
-                                    <input type="text" name="break_hours" value="{{ old('break_hours', '1:00') }}"
+                                     <input type="text" name="break_hours" value="{{ old('break_hours', '1') }}"
                                            placeholder="1:00 or 1.5"
                                            class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all @error('break_hours') border-red-500 @enderror">
                                     <p class="text-xs text-gray-500 mt-2">Use 1:00, 1:30, or decimal like 1.5</p>
@@ -139,10 +139,22 @@
                                         class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-gray-50 text-gray-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all">
                                     <p class="text-xs text-gray-500 mt-2">Leave blank for auto-calc or use 8:00 format</p>
                                 </div>
-                            </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-900 mb-2">
+                                        <div class="flex items-center">
+                                            <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            Required Hours
+                                        </div>
+                                    </label>
+                                    <input type="text" name="required_hours" value="{{ old('required_hours', '8') }}"
+                                           placeholder="8 or 8:00"
+                                           class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all @error('required_hours') border-red-500 @enderror">
+                                    <p class="text-xs text-gray-500 mt-2">Default 8 (minimum hours deducted before OT)</p>
+                                    @error('required_hours')<p class="text-red-600 text-sm mt-2">{{ $message }}</p>@enderror
+                                </div>
 
-                            {{-- OT Hours --}}
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label class="block text-sm font-semibold text-gray-900 mb-2">
                                         <div class="flex items-center">
@@ -155,7 +167,7 @@
                                     <input type="text" name="overtime_hours" value="{{ old('overtime_hours') }}"
                                         placeholder="Auto-calculated (e.g., 2:30)"
                                         class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-gray-50 text-gray-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all">
-                                    <p class="text-xs text-gray-500 mt-2">Auto-calculated (Rendered - 8) or use 2:30 format</p>
+                                    <p class="text-xs text-gray-500 mt-2">Auto-calculated (Rendered - Required) or use 2:30 format</p>
                                 </div>
                             </div>
 
@@ -221,5 +233,5 @@
             </div>
         </div>
     </div>
-</div>
+    </div>
 @endsection

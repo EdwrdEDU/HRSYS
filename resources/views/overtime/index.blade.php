@@ -3,9 +3,8 @@
 @section('title', 'Overtime Records')
 
 @section('content')
-<div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-    <div class="px-4 sm:px-6 lg:px-8 py-8">
-        {{-- Header with back button --}}
+<div class="px-4 sm:px-6 lg:px-8">
+    {{-- Header with back button --}}
         <div class="flex items-center justify-between mb-8">
             <div>
                 <a href="{{ route('employees.index') }}" class="inline-flex items-center text-indigo-600 hover:text-indigo-700 font-medium mb-3 transition-colors">
@@ -25,7 +24,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-xs text-gray-600 font-medium">Approved Hours</p>
-                        <p class="text-2xl font-bold text-green-600 mt-1">{{ number_format($approvedTotal, 2) }}</p>
+                        <p class="text-2xl font-bold text-green-600 mt-1">{{ floor($approvedTotal) }}:{{ str_pad(round(($approvedTotal - floor($approvedTotal)) * 60), 2, '0', STR_PAD_LEFT) }}</p>
                         <p class="text-xs text-gray-500 mt-0.5">hours approved</p>
                     </div>
                     <div class="p-2 bg-green-100 rounded-lg">
@@ -40,7 +39,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-xs text-gray-600 font-medium">Pending Hours</p>
-                        <p class="text-2xl font-bold text-amber-600 mt-1">{{ number_format($pendingTotal, 2) }}</p>
+                        <p class="text-2xl font-bold text-amber-600 mt-1">{{ floor($pendingTotal) }}:{{ str_pad(round(($pendingTotal - floor($pendingTotal)) * 60), 2, '0', STR_PAD_LEFT) }}</p>
                         <p class="text-xs text-gray-500 mt-0.5">hours pending approval</p>
                     </div>
                     <div class="p-2 bg-amber-100 rounded-lg">
@@ -71,6 +70,15 @@
                 </svg>
                 Add Overtime
             </a>
+
+            <button type="button"
+                    onclick="openImportModal()"
+                    class="flex items-center justify-center px-6 py-3 bg-white border border-indigo-200 text-indigo-700 font-semibold rounded-xl transition-all duration-200 shadow-sm hover:shadow-md hover:-translate-y-0.5">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v12m0 0l-3-3m3 3l3-3m6 5v2a2 2 0 01-2 2H7a2 2 0 01-2-2v-2"></path>
+                </svg>
+                Import Excel
+            </button>
 
             <div class="flex-1 flex gap-2">
                 <form method="GET" action="{{ route('overtime.index', $employee) }}" class="flex-1 flex gap-2">
@@ -124,18 +132,22 @@
                                     {{ $record->time_out ? \Carbon\Carbon::parse($record->time_out)->format('h:i A') : '-' }}
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-600">
-                                    {{ $record->break_hours ?? '-' }}
+                                    @if($record->break_hours)
+                                        {{ floor($record->break_hours) }}:{{ str_pad(round(($record->break_hours - floor($record->break_hours)) * 60), 2, '0', STR_PAD_LEFT) }}
+                                    @else
+                                        -
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 text-sm font-medium text-gray-900">
                                     @if($record->total_hours_rendered)
-                                        {{ $record->total_hours_rendered }} {{ $record->total_hours_rendered == 1 ? 'hr' : 'hrs' }}
+                                        {{ floor($record->total_hours_rendered) }}:{{ str_pad(round(($record->total_hours_rendered - floor($record->total_hours_rendered)) * 60), 2, '0', STR_PAD_LEFT) }}
                                     @else
                                         -
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-sm font-bold text-indigo-600">
                                     @if($record->overtime_hours)
-                                        {{ $record->overtime_hours }} {{ $record->overtime_hours == 1 ? 'hr' : 'hrs' }}
+                                        {{ floor($record->overtime_hours) }}:{{ str_pad(round(($record->overtime_hours - floor($record->overtime_hours)) * 60), 2, '0', STR_PAD_LEFT) }}
                                     @else
                                         -
                                     @endif
@@ -145,11 +157,6 @@
                                         <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100/80 text-green-700 backdrop-blur-sm">
                                             <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></path></svg>
                                             Approved
-                                        </span>
-                                    @elseif(str_contains($record->approval_status, 'Form A Only'))
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100/80 text-amber-700 backdrop-blur-sm">
-                                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></path></svg>
-                                            Form A Only
                                         </span>
                                     @else
                                         <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-100/80 text-amber-700 backdrop-blur-sm">
@@ -231,7 +238,7 @@
                                             {{ $sub->subtraction_date->format('D, M d') }}
                                         </td>
                                         <td class="px-6 py-4 text-sm font-bold text-red-600">
-                                            -{{ $sub->hours_subtracted }} hrs
+                                            -{{ floor($sub->hours_subtracted) }}:{{ str_pad(round(($sub->hours_subtracted - floor($sub->hours_subtracted)) * 60), 2, '0', STR_PAD_LEFT) }}
                                         </td>
                                         <td class="px-6 py-4 text-sm text-gray-600">
                                             {{ $sub->reason }}
@@ -262,6 +269,65 @@
             </div>
         @endif
     </div>
+
+{{-- Import Overtime Modal --}}
+<div id="importOvertimeModal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onclick="closeImportModal()"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+        <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl sm:w-full sm:p-6">
+            <div class="sm:flex sm:items-start">
+                <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 sm:mx-0 sm:h-10 sm:w-10">
+                    <svg class="h-6 w-6 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v12m0 0l-3-3m3 3l3-3m6 5v2a2 2 0 01-2 2H7a2 2 0 01-2-2v-2" />
+                    </svg>
+                </div>
+
+                <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left flex-1">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Import Overtime Records</h3>
+                    <div class="mt-2">
+                        <p class="text-sm text-gray-500">Upload an Excel or CSV file with the following columns:</p>
+                        <ul class="text-sm text-gray-600 mt-2 space-y-1 list-disc list-inside">
+                            <li>DATE</li>
+                            <li>IN (or TIME_IN)</li>
+                            <li>OUT (or TIME_OUT)</li>
+                            <li>BREAK (or BREAK_MINUTES)</li>
+                            <li>OVERTIME (or OVERTIME_HOURS)</li>
+                            <li>REMARKS</li>
+                            <li>PURPOSE_DELIVERABLES</li>
+                            <li>ACTUAL_ACCOMPLISHMENT</li>
+                        </ul>
+                        <p class="text-xs text-gray-500 mt-2">All columns are optional. Empty rows are skipped.</p>
+                    </div>
+                </div>
+            </div>
+
+            <form action="{{ route('overtime.import', $employee) }}" method="POST" enctype="multipart/form-data" class="mt-6">
+                @csrf
+                <div class="flex flex-col gap-3">
+                    <input type="file"
+                           name="file"
+                           accept=".xlsx,.xls,.csv"
+                           class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+                           required>
+                </div>
+
+                <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse gap-2">
+                    <button type="submit"
+                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto sm:text-sm transition-colors">
+                        Import File
+                    </button>
+                    <button type="button"
+                            onclick="closeImportModal()"
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 {{-- Delete Overtime Record Modal --}}
 <div id="deleteOvertimeModal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
@@ -411,11 +477,23 @@ function closeUndoModal() {
     document.body.style.overflow = 'auto';
 }
 
+// Import Overtime Modal Functions
+function openImportModal() {
+    document.getElementById('importOvertimeModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeImportModal() {
+    document.getElementById('importOvertimeModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
 // Close modals with Escape key
 document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
         closeDeleteOvertimeModal();
         closeUndoModal();
+        closeImportModal();
     }
 });
 </script>

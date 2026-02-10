@@ -25,6 +25,7 @@ Route::middleware('auth')->group(function () {
     // Overtime Routes
     Route::get('employees/{employee}/overtime', [OvertimeRecordController::class, 'index'])->name('overtime.index');
     Route::get('employees/{employee}/overtime/create', [OvertimeRecordController::class, 'create'])->name('overtime.create');
+    Route::post('employees/{employee}/overtime/import', [OvertimeRecordController::class, 'import'])->name('overtime.import');
     Route::get('employees/{employee}/overtime/subtract', [OvertimeRecordController::class, 'subtractForm'])->name('overtime.subtract.form');
     Route::post('employees/{employee}/overtime/subtract', [OvertimeRecordController::class, 'subtract'])->name('overtime.subtract');
     Route::delete('employees/{employee}/overtime/subtraction/{subtractionId}', [OvertimeRecordController::class, 'deleteSubtraction'])->name('overtime.subtraction.delete');
